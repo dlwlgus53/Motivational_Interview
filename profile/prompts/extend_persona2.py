@@ -13,9 +13,10 @@ def get_prompt(persona, resistant_types):
 
 
     This is resistance types for each stage and descriptions:
-    pre-contemplation : {resistant_types['pre-contemplation']}
-    contemplation : {resistant_types['contemplation']}
-    preparation : {resistant_types['preparation']}
+    pre-contemplation : {resistant_types['Pre-Contemplation']}
+    contemplation : {resistant_types['Contemplation']}
+    preparation : {resistant_types['Preparation']}
+    
     
     
     Task:
@@ -37,5 +38,9 @@ def get_prompt(persona, resistant_types):
         "contemplation": "Detailed resistance that user exhibits in this stage, and example of what the client might actually say.",
         "preparation": "Detailed resistance that user exhibits in this stage, and example of what the client might actually say.",
     }}
+    
+    Problem-Acknowledged, Open-Contemplation, Open-Planning is not a resistance type.
+    In that case, write cooperative behavior for that stage.
+    
     """
     return prompt

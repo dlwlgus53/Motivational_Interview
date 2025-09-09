@@ -39,7 +39,7 @@ python run.py  --run_type batch --llm_name gpt-4o-mini
     
 
 def process_resistant(resistants):
-    resistant_str_dict = defaultdict(str)
+    resistant_str_dict = {}
     random_ress = {}
     for stage_name, stage_list in resistants.items():
         resistant_str_dict[stage_name] = f"{stage_name}:\n"
@@ -79,6 +79,7 @@ if __name__ == "__main__":
         resistant_dict = process_resistant(resistant_raw)
         prompt_text = get_prompt(persona, resistant_dict)
         payload =make_line(idx, prompt_text, model_name=args.llm_name)
+        
         infos[idx] = {
             "persona":persona,
             "resistant": resistant_dict
