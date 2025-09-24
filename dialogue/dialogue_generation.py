@@ -44,7 +44,6 @@ if __name__ == "__main__":
     os.makedirs(os.path.dirname(args.save_folder), exist_ok=True)
 
     personas = json.load(open(args.persona_path))
-    client = Client_Simulator(args.llm_name)
     counselor = Counselor_Simulator(args.llm_name)
     result = {}
     
@@ -53,6 +52,9 @@ if __name__ == "__main__":
         dial_id = "dial_" + str(idx).zfill(4) + "_" + persona_id
         
         persona = personas[persona_id]
+        client = Client_Simulator(args.llm_name, persona)
+        print(f"📝 Generating dialogue {dial_id} with persona {persona_id}")
+        
         for t_idx in range(args.max_turn_num):
             if t_idx == 0:
                 counselor_utterance = counselor.initialize_conversation()
