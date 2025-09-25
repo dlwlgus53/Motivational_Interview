@@ -3,7 +3,8 @@
 *.sh
 /utils/*.json
 profile/generated/*.json
-
+/AnnoMI/generated/*.pdf
+/AnnoMI/analysis/*.pdf
 profile/shs/*.sh
 
 # Byte-compiled / optimized / DLL files
