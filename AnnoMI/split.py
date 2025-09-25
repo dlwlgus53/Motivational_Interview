@@ -2,7 +2,7 @@ import json
 import random
 
 # 입력 데이터 파일 경로
-input_file = "/home/jihyunlee/MI/AnnoMI/generated/step2_annomi.json"
+input_file = "/home/jihyunlee/MI/AnnoMI/generated/step3_annomi.json"
 train_file = "/home/jihyunlee/MI/AnnoMI/generated/train.json"
 test_file = "/home/jihyunlee/MI/AnnoMI/generated/test.json"
 

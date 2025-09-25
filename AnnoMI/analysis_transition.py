@@ -1,3 +1,5 @@
+# Transition for therapist and client action
+
 import json
 from collections import defaultdict
 import pandas as pd
@@ -5,6 +7,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import pdb 
+import os
+
 
 def compute_salience(transition_data):
     """
@@ -94,21 +98,24 @@ def plot_salience_heatmap(salience_data, filename_suffix="salience"):
 
 
 def get_transitions(utterances):
-    client_utterances = [turn for turn in utterances if turn["interlocutor"] == "client"]
-    actions = {}
-    actions[0] = ['NoAction']
-    for idx, turn in enumerate(client_utterances):
-        if turn['actions']:
-            actions[idx+1] = turn['actions']
-        else:
-            actions[idx+1] = ['NoAction']
-    transitions = defaultdict(int)
+    if not utterances:
+        return defaultdict(int)
+    if utterances[0]['interlocutor'] != 'therapist':
+        utterances = utterances[1:]
 
-    for i in range(len(actions) - 1):
-        action1, action2 = actions[i], actions[i + 1]
-        for a1 in action1:
-            for a2 in action2:
-                transitions[(a1, a2)] += 1
+    transitions = defaultdict(int)
+    for idx, turn in enumerate(utterances):
+        if turn['interlocutor'] == 'client':
+            try:
+                therapist_action = utterances[idx - 1]['actions']['code']
+            except:
+                pdb.set_trace()
+            client_actions = turn['actions']
+            if len(client_actions) == 0:
+                client_actions = ['NoAction']
+            
+            for act in client_actions:
+                transitions[(therapist_action, act)] += 1
     return transitions
 
 def plot_transition_heatmap_split(transition_data, filename_suffix="by_code_split"):
@@ -220,9 +227,11 @@ def simplify_code(rcode):
 
 
 if __name__ == "__main__":
-    data_path = "/home/jihyunlee/MI/AnnoMI/generated/test.json"
+    data_path = "/home/jihyunlee/MI/AnnoMI/generated/train.json"
     dataset = json.load(open(data_path))
-    save_path_code = data_path.replace(".json", "_transition_by_resistance.json")
+    save_folder = "/home/jihyunlee/MI/AnnoMI/analysis/"
+    os.makedirs(save_folder, exist_ok=True)
+    save_path = f"{save_folder}/counselor_client.json"
 
     # 전이 데이터 (저항 코드 기준)
     transition_data = defaultdict(lambda: defaultdict(int))
@@ -281,9 +290,9 @@ if __name__ == "__main__":
                 final_data_code[rcode][action][b]['all_prob'] = final_data_code[rcode][action][b]['count'] / all_cnt if all_cnt > 0 else 0.0
             
 
-    with open(save_path_code, "w") as f:
+    with open(save_path, "w") as f:
         json.dump(final_data_code, f, indent=4)
-    print("Saved detailed JSON in", save_path_code)
+    print("Saved detailed JSON in", save_path)
 
     # 턴 수 출력 (세부 코드, 그룹)
     print("\n=== Turn counts by resistance code ===")

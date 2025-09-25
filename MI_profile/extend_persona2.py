@@ -39,29 +39,10 @@ python run.py  --run_type batch --llm_name gpt-4o-mini
     
 
 def process_resistant(resistants):
-    resistant_str_dict = {}
-    resistant_code_dict = {}
-    for stage_name, stage_list in resistants.items():
-        stage_name = stage_name.lower()
-        if random.random() < 0.2:
-            if stage_name == "pre-contemplation":
-                random_res = {"name":"No Resistance", "description":"The client recognizes the problem and expresses openness without resistance."}
-                state_code = "PC-NR"
-            elif stage_name == "contemplation":
-                random_res = {"name":"No Resistance", "description":"The client thoughtfully considers change with curiosity and openness, without expressed resistance."}
-                state_code = "CO-NR"
-            elif stage_name == "preparation":
-                random_res = {"name":"No Resistance", "description":"The client actively plans for change with readiness and positive engagement, without resistance."}
-                state_code = "PR-NR"
-            else:
-                raise ValueError("Unknown stage name")
-        else:
-            random_res = random.choice(stage_list)
-            state_code = random_res['code']
-            
-        resistant_str_dict[stage_name] = f"{random_res['name']} ({random_res['description']})"
-        resistant_code_dict[stage_name] =  {'state': state_code}
-    return resistant_str_dict, resistant_code_dict
+    random_res = random.choice(resistants)
+    resistant_str = f"Attitude : {random_res['name']}\nDescription : {random_res['description']}\nExample : {random_res['example']}\n"
+                
+    return resistant_str, random_res
     
     
     
@@ -84,7 +65,7 @@ if __name__ == "__main__":
 
 
     personas = json.load(open(args.persona_path))
-    resistant_raw = json.load(open(args.resistant_path))["resistant"]
+    resistant_raw = json.load(open(args.resistant_path))["resistant_types"]
 
 
     payloads = []
@@ -112,17 +93,8 @@ if __name__ == "__main__":
     
     for idx, (key, value) in enumerate(output.items()):
         processed_output[key] = infos[key]
-        value = value['resistant_action']
-        try:
-            for key2, value2 in value.items():
-                key2 = key2.lower()
-                processed_output[key]['resistant'][key2]['action'] = value2
-        except:
-            processed_output[key]['resistant'] = {}
-            processed_output[key]['valid'] = "False"
-            processed_output[key]['reason'] = "LLM output parsing error"
-            print("Error in ", key, value)
-
+        processed_output[key]["resistant"]['statements'] = value["statements"]
+       
     with open(save_processed, "w") as f:
         json.dump(processed_output, f, indent=4)
 

@@ -2,7 +2,7 @@ import json
 from collections import Counter
 
 # 데이터 불러오기
-data_path = "/home/jihyunlee/MI/AnnoMI/generated/train.json"
+data_path = "/home/jihyunlee/MI/AnnoMI/generated/test.json"
 dataset = json.load(open(data_path))
 
 # dialogue 단위 code 수 세기

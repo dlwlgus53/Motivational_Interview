@@ -61,11 +61,13 @@ if __name__ == "__main__":
                 result[dial_id] = {"persona": persona, "dialogue": [{"role": "counselor", "utterance": counselor_utterance}]}
             else:
                 client_utterance = client.respond(result[dial_id]["dialogue"])
-                result[dial_id]["dialogue"].append({"role": "client", "utterance": client_utterance})
+                client_utterance['role'] = 'client'
+                result[dial_id]["dialogue"].append(client_utterance)
                 if t_idx == args.max_turn_num - 1:
                     break
                 counselor_utterance = counselor.respond(result[dial_id]["dialogue"])
-                result[dial_id]["dialogue"].append({"role": "counselor", "utterance": counselor_utterance})
+                counselor_utterance['role'] = 'counselor'
+                result[dial_id]["dialogue"].append(counselor_utterance)
             print(f"Dialogue {dial_id}, Turn {t_idx} completed.")
     
     
