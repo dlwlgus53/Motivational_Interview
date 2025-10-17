@@ -37,7 +37,7 @@ python run.py  --run_type batch --llm_name gpt-4o-mini
 
 def process_resistant(resistants):
     resistant_str = ""
-    for rest in resistants:
+    for rest_key, rest in resistants.items():
         code = rest['code']
         name = rest['name']
         for sev_key, sev_item in rest['examples'].items():
@@ -50,13 +50,14 @@ def process_resistant(resistants):
     return resistant_str
     
 def get_preference(resistants):
-    options = [0, 1, 2, 3]
+    keys = list(resistants.keys())
+    assert keys[-1] == "NR", "First resistant type should be No Resistance"
+    options = keys
     weights = [0.28, 0.28, 0.28, 0.16]  
-    assert resistants[3]['code'] == "NR", "First resistant type should be No Resistance"
     chosen = random.choices(options, weights=weights, k=1)[0]
     code = resistants[chosen]['code']
     name = resistants[chosen]['name']
-    severity=random.choice(list(resistants[0]['examples'].keys()))
+    severity=random.choice(list(resistants[keys[0]]['examples'].keys()))
     return {'code': code, 'name': name, 'severity': severity}
     
 if __name__ == "__main__":
