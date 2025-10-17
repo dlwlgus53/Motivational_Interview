@@ -4,7 +4,7 @@ extend persona. add  referral_reason, state (pre-contemplation or contemplation)
 import os
 import json
 import argparse
-from prompts.extend_persona2 import get_prompt
+from .prompts.extend_persona2 import get_prompt
 import random
 import re
 # generation/run_scenario.py
@@ -19,13 +19,12 @@ from utils.utils import  process_batch, process_live, write_to_temp, make_line
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--persona_path', type=str, default = "./generated/extend_persona1.json")
-parser.add_argument('--resistant_path', type=str, default = "../source/resistant.json")
 
 parser.add_argument('--run_type', type=str, default="live") # batch or live
 parser.add_argument('--llm_name', type=str, default="gpt-4o") # batch or live
 parser.add_argument('--seed', type = int, default=1)
 parser.add_argument('--save_folder', type = str, default = "./generated")
-parser.add_argument('--api_key_path', type = str, default = "../utils/config.json")
+parser.add_argument('--config_path', type = str, default = "/home/jihyunlee/MI/utils/config.json")
 parser.add_argument('--output_path', type = str, default = "extend_persona2.json")
 
 args = parser.parse_args()
@@ -39,20 +38,36 @@ python run.py  --run_type batch --llm_name gpt-4o-mini
     
 
 def process_resistant(resistants):
-    random_res = random.choice(resistants)
-    resistant_str = f"Attitude : {random_res['name']}\nDescription : {random_res['description']}\nExample : {random_res['example']}\n"
-                
-    return resistant_str, random_res
+    resistant_str = ""
+    for rest in resistants:
+        code = rest['code']
+        name = rest['name']
+        for sev_key, sev_item in rest['examples'].items():
+            resistant_str += f"Code: {code}, Name: {name}, Severity: {sev_key}\n"
+            resistant_str += f" -- In this resistatn and severity level the client might:\n"
+            resistant_str += f"{sev_item['Pre-contemplation']['description']}\n"
+            resistant_str += f"{sev_item['Contemplation']['description']}\n"
+            resistant_str += f"{sev_item['Preparation']['description']}\n"
     
+    return resistant_str
     
+def get_preference(resistants):
+    options = [0, 1, 2, 3]
+    weights = [0.28, 0.28, 0.28, 0.16]  
+    assert resistants[3]['code'] == "NR", "First resistant type should be No Resistance"
+    chosen = random.choices(options, weights=weights, k=1)[0]
+    code = resistants[chosen]['code']
+    name = resistants[chosen]['name']
+    severity=random.choice(list(resistants[0]['examples'].keys()))
+    return {'code': code, 'name': name, 'severity': severity}
     
 if __name__ == "__main__":
     random.seed(args.seed)
     save_temp = f"./temp/extend_persona2_{args.output_path}l"
     save_result = f"batch_output/extend_persona2_{args.output_path}l"
     save_processed = f"{args.save_folder}/{args.output_path}" 
-
-    os.environ["OPENAI_API_KEY"] = json.load(open(args.api_key_path))["api-key"]
+    config = json.load(open(args.config_path))
+    os.environ["OPENAI_API_KEY"] = config["api-key"]
     
     print("📚 Start Generate Theme")
     print(f"Will save temp in {save_temp}")
@@ -65,19 +80,19 @@ if __name__ == "__main__":
 
 
     personas = json.load(open(args.persona_path))
-    resistant_raw = json.load(open(args.resistant_path))["resistant_types"]
-
+    resistant_raw = json.load(open(config['resistant_path']))['resistant_types']
 
     payloads = []
     infos = {}
     for idx, persona in personas.items():
-        resistant_dict, resistant_code_dict = process_resistant(resistant_raw)
-        prompt_text = get_prompt(persona, resistant_dict)
-        payload =make_line(idx, prompt_text, model_name=args.llm_name)
+        resistant_str = process_resistant(resistant_raw)
+        preference = get_preference(resistant_raw)
         
+        prompt_text = get_prompt(persona['info'], resistant_str, preference)
+        payload =make_line(idx, prompt_text, model_name=args.llm_name)
         infos[idx] = {
-            "persona":persona,
-            "resistant": resistant_code_dict
+            "raw": persona['raw'],
+            "info":persona['info'],
         }
         payloads.append(payload)
         write_to_temp(save_temp, payload)
@@ -87,13 +102,11 @@ if __name__ == "__main__":
     else:
         output = process_live(payloads)
         
-        
-        
     processed_output = {}
     
     for idx, (key, value) in enumerate(output.items()):
         processed_output[key] = infos[key]
-        processed_output[key]["resistant"]['statements'] = value["statements"]
+        processed_output[key]["resistant"]= value
        
     with open(save_processed, "w") as f:
         json.dump(processed_output, f, indent=4)

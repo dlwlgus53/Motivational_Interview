@@ -1,5 +1,9 @@
 '''
-extend persona. add  referral_reason, state (pre-contemplation or contemplation) 
+Generates extended client personas for Motivational Interviewing (MI) using real narratives and background profiles.
+Randomly assigns referral type and infers reason for counseling and stage of change (pre-contemplation or contemplation).
+Builds structured LLM prompts via get_prompt() and runs generation in batch or live mode.
+Produces consistent JSON outputs describing problems, ambivalence, and behavioral goals.
+Saves results to organized folders (temp/, batch_output/, generated/) for further MI data generation.
 '''
 import os
 import pdb
@@ -21,7 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--narrative_path', type=str, default = "./source/reddit_posts_masked.json")
 parser.add_argument('--persona_path', type=str, default = "./source/persona.json")
 
-parser.add_argument('--num_to_generate', type=int, default=20) # number of intake forms to generate
+parser.add_argument('--num_to_generate', type=int, default=10) # number of intake forms to generate
 
 parser.add_argument('--run_type', type=str, default="live") # batch or live
 parser.add_argument('--llm_name', type=str, default="gpt-4o") # batch or live
@@ -38,6 +42,15 @@ python run.py  --run_type batch --llm_name gpt-4o-mini
 '''
 
 
+
+KEY_TO_USE = [
+    "problems",
+    "problem_metrics",
+    "reason_for_counseling",
+    "referred_by",
+    "specific_event",
+    "ambivalence_target",
+]
 
 def process_narrative(profiles):
     processed_profiles = []
@@ -65,7 +78,7 @@ if __name__ == "__main__":
     os.makedirs(os.path.dirname(save_result), exist_ok=True)
     os.makedirs(os.path.dirname(save_processed), exist_ok=True)
 
-
+    random.seed(args.seed)
     narratives = process_narrative(json.load(open(args.narrative_path)))
     # randomly shuffle
     random.shuffle(narratives)
@@ -76,7 +89,11 @@ if __name__ == "__main__":
     infos = {}
     for idx in range(args.num_to_generate):
         narrative = narratives[idx % len(narratives)]  # Cycle through personas
-        referred_by = random.choice(["self-referred", "referred by others (family, friend, teacher, doctor, etc.)"])
+        referred_by = random.choices(
+            ["self-referred", "referred by others (family, friend, teacher, doctor, etc.)"],
+            weights=[0.2, 0.8],  # 70% vs 30% 확률
+            k=1
+        )[0]
         background = personas[idx % len(personas)]
         prompt_text = get_prompt(narrative['selftext'], background,  referred_by)
         payload =make_line(f"persona_{idx}", prompt_text, model_name=args.llm_name)
@@ -98,7 +115,13 @@ if __name__ == "__main__":
     
     for idx, (key, value) in enumerate(output.items()):
         if "problems" in value:
-            processed_output[infos[key]["key"]] = {**infos[key], **value}
+            merged_info = {**infos[key], **value}
+            processed_output[infos[key]["key"]] = {'raw': {}, 'info': {}}
+            for k in merged_info:
+                if k in KEY_TO_USE:
+                    processed_output[infos[key]["key"]]['info'][k] = merged_info[k]
+                else:
+                    processed_output[infos[key]["key"]]["raw"][k] = merged_info[k]
         else:
             continue
             
