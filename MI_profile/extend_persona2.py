@@ -23,9 +23,7 @@ parser.add_argument('--persona_path', type=str, default = "./generated/extend_pe
 parser.add_argument('--run_type', type=str, default="live") # batch or live
 parser.add_argument('--llm_name', type=str, default="gpt-4o") # batch or live
 parser.add_argument('--seed', type = int, default=1)
-parser.add_argument('--save_folder', type = str, default = "./generated")
 parser.add_argument('--config_path', type = str, default = "/home/jihyunlee/MI/utils/config.json")
-parser.add_argument('--output_path', type = str, default = "extend_persona2.json")
 
 args = parser.parse_args()
 
@@ -63,10 +61,14 @@ def get_preference(resistants):
     
 if __name__ == "__main__":
     random.seed(args.seed)
-    save_temp = f"./temp/extend_persona2_{args.output_path}l"
-    save_result = f"batch_output/extend_persona2_{args.output_path}l"
-    save_processed = f"{args.save_folder}/{args.output_path}" 
     config = json.load(open(args.config_path))
+    output_path = config['persona_path']
+    output_path_file_name = output_path.split("/")[-1]
+    
+    
+    save_temp = f"./temp/extend_persona2_{output_path_file_name}l"
+    save_result = f"batch_output/extend_persona2_{output_path_file_name}l"
+    save_processed = output_path
     os.environ["OPENAI_API_KEY"] = config["api-key"]
     
     print("📚 Start Generate Theme")
